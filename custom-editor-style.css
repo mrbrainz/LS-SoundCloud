@@ -1,0 +1,11 @@
+/*custom editor style for Appointment*/
+
+body#tinymce.wp-editor { 
+    font-family: 'DroidSansRegular'; 
+	font-size:18px;
+    margin: 10px; 
+}
+
+body#tinymce.wp-editor a {
+    color: #4CA6CF;
+}

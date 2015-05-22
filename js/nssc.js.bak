@@ -1,0 +1,512 @@
+jQuery(document).ready(function() {
+	// Feedback button
+	
+	jQuery('.slide-out-div').tabSlideOut({
+    	tabHandle: '.handle',
+		pathToTabImage: '/wp-content/themes/lessshitsoundcloud/images/feedback-tab-custom.jpg',
+    	imageHeight: '28px',
+    	imageWidth: '129px',  
+    	tabLocation: 'bottom', 
+		speed: 300,
+		action: 'click',
+		leftPos: 'auto',
+		fixedPosition: false   
+	});
+	
+	
+	jQuery('.meta a').click(function() {
+		if (jQuery(this).hasClass('open')) {
+			jQuery(this).html(jQuery(this).html().replace('<i class="fa fa-close"></i>','<i class="fa fa-plus"></i>')).removeClass('open');
+			jQuery(this).parent().parent().find('pre').stop().fadeOut();
+		}
+		else {
+			jQuery(this).html(jQuery(this).html().replace('<i class="fa fa-plus"></i>','<i class="fa fa-close"></i>')).addClass('open');
+			jQuery(this).parent().parent().find('pre').stop().fadeIn();
+		}
+	});
+	
+	jQuery('.reposthelp .intro-copy').each(function() {
+		jQuery(this).css({height:'auto'});
+		jQuery(this).attr('data-height',jQuery(this).height());
+		jQuery(this).css({height:'0px'});
+	});
+	
+	jQuery('.reposthelp a.helper').click(function() {
+		el = jQuery(this).parent().parent().find('.intro-copy')
+		
+		if (jQuery(this).hasClass('open')) {
+			jQuery(this).html(jQuery(this).html().replace('<i class="fa fa-close"></i>','<i class="fa fa-plus"></i>')).removeClass('open');
+			jQuery(el).stop().animate({height:0},500);
+		}
+		else {
+			jQuery(this).html(jQuery(this).html().replace('<i class="fa fa-plus"></i>','<i class="fa fa-close"></i>')).addClass('open');
+			jQuery(el).stop().animate({height:jQuery(el).attr('data-height')},500);
+		}
+	});
+	
+	
+	jQuery('.track-description-cont').each(function() {
+		jQuery(this).css({height:'auto'});
+		jQuery(this).attr('data-height',jQuery(this).height());
+		jQuery(this).css({height:'0px'});
+		
+		jQuery(this).parent().find('.trackmeta').append('<li class="desc-toggle"><a href="javascript:void(0)" onclick="scShowDesc(this);" class="show-desc awesome grey"><i class="fa fa-caret-right"></i> Show Description</a></li>');
+	});
+	
+	if (jQuery("#nssc-slslider").length) {
+	
+		jQuery('.settingscont').css({height:'auto'});
+		jQuery('.settingscont').attr('data-height',jQuery('.settingscont').height());
+		jQuery('.settingscont').css({height:'0px'});
+		
+		var slideval = parseInt(jQuery('#nssc-slslider').data('defleng'));
+		if (!slideval) slideval = 1200;
+		
+		jQuery("#nssc-slslider").noUiSlider({
+			start: slideval,
+			connect: "lower",
+			range: {
+				'min': 240,
+				'max': 2000
+			},
+			format: wNumb({
+				decimals: 0
+			}),
+			step:60
+		});
+		jQuery("#nssc-slslider").Link('lower').to(jQuery('#nssc-songlength'),timeFormatter);
+		
+		jQuery("#nssc-slslider").on({
+			change: function(){
+			jQuery(this).attr('disabled','disabled').addClass('working');
+			var leng = jQuery(this).val();
+			var el = this;
+			jQuery.ajax({
+				type	: 'POST',
+				url		: ssd+'/inc/ajax.php',
+				data	:	{ 
+								task		: 'songlength',
+								length		: leng,
+								_wpnonce	: jsn
+							},
+				
+				success : function( data, status, xhr )	{ 
+					
+					data = jQuery.parseJSON(data);
+					
+					if (typeof(data.error) == 'undefined') {	jQuery(el).removeAttr('disabled').removeClass('working').addClass('success').delay(3000).removeClass('success');	
+					}
+					
+					else if (typeof(data.error) == 'undefined') {
+						jQuery(el).addClass('error').removeClass('working').removeAttr('disabled');
+					}
+					
+				},
+				error : function( xhr, status, error ) {
+					jQuery(el).addClass('error').removeClass('working').removeAttr('disabled');
+				}
+			});
+			}
+		});
+	}
+	
+});
+
+
+
+
+function timeFormatter( value ) {
+			var minutes = Math.floor(parseInt(value) / 60);
+			jQuery(this).html(minutes+' minutes');
+			}
+    
+function scShowDesc(em) {
+		el = jQuery(em).parent().parent() .parent() .parent().find('.track-description-cont');
+		if (jQuery(em).hasClass('open')) {
+			jQuery(em).html('<i class="fa fa-caret-right"></i> Show Description').removeClass('open');
+			jQuery(el).attr('data-height',jQuery(el).height());
+			jQuery(el).stop().animate({height:0},500);
+		}
+		else {
+			
+			jQuery(em).html('<i class="fa fa-close"></i> Hide Description').addClass('open');
+			jQuery(el).stop().animate({height:jQuery(el).attr('data-height')},500, function() {
+				jQuery(el).css({height:'auto'});
+			});
+		}
+}
+
+function scSettingPanel() {
+		el = jQuery('.settingscont');
+		if (jQuery(el).hasClass('open')) {;
+			jQuery(el).attr('data-height',jQuery(el).height()).removeClass('open');
+			jQuery(el).stop().animate({height:0},500);
+		}
+		else {
+			jQuery(el).addClass('open').stop().animate({height:jQuery(el).attr('data-height')},500, function() {
+				jQuery(el).css({height:'auto'});
+			});
+		}
+}
+
+function nsscComment(scid,el) {
+	var ttitle = jQuery(el).parent().parent().parent().find('.tracktitle a').text();
+	 var lightbox = '<div id="commentlightbox">';
+		lightbox += '	<h3>Leaving a comment on <span class="track-title">'+ttitle+'</h3>';
+		lightbox += '	<form id="commentform">';
+		lightbox += '		<textarea name="commenttext" class="commentbox" placeholder="Leave a comment on '+ttitle+'..."></textarea>';
+		lightbox += '		<input type="hidden" name="scid" class="comment-scid" value="'+scid+'" />';
+		lightbox += '		<a href="javascript:void(0)" class="awesome nssc" onclick="nsscCommentSubmit();return false;">Leave A Comment</a>';
+		lightbox += '	</form>';
+		lightbox += '</div>';
+		jQuery.featherlight(lightbox);
+}
+
+function nsscCommentSubmit() {  
+		jQuery('#commentlightbox').addClass('working');        
+		jQuery.ajax({
+			type	: 'POST',
+			url		: ssd+'/inc/ajax.php',
+			data	:	{ 
+							task		: 'comment',
+							_wpnonce	: jsn,
+							scid		: jQuery('#commentlightbox .comment-scid').val(),
+							commenttext	: jQuery('#commentlightbox .commentbox').val() 
+						},
+			
+			success : function( data, status, xhr )	{ 
+				
+				data = jQuery.parseJSON(data);
+				
+				if (typeof(data.success) != 'undefined') {
+					jQuery('#commentlightbox').removeClass('working');
+					jQuery.featherlight.close();
+				}
+				
+				else if (typeof(data.error) == 'undefined') {
+					jQuery('#commentlightbox').addClass('error').removeClass('working');
+				}
+				
+			},
+			error : function( xhr, status, error ) {
+				jQuery('#commentlightbox').addClass('error').removeClass('working');
+			}
+		});
+}
+
+function nsscLike(scid,el,type) {
+	var task = false;
+	if ( jQuery(el).hasClass('liking') ) { 
+		return false; 
+	} else {
+		jQuery(el).addClass('liking');
+		if ( jQuery(el).hasClass('liked') ) { 
+			task = 'unlike'; 
+		} else { 
+			task = 'like'; 
+		}
+		
+		jQuery.ajax({
+			type	: 'POST',
+			url		: ssd+'/inc/ajax.php',
+			data	:	{ 
+							task		: task,
+							_wpnonce	: jsn,
+							scid		: scid,
+							type		: type
+						},
+			
+			success : function( data, status, xhr )	{ 
+				
+				data = jQuery.parseJSON(data);
+				
+				if (typeof(data.error) == 'undefined') {
+					if (task == 'like') {
+						if (jQuery(el).hasClass('likebutts')) {
+							jQuery(el).html('<i class="fa fa-heart"></i> Liked').removeClass('liking').addClass('liked');
+						}
+						else {
+							jQuery(el).html('<i class="fa fa-heart"></i>').removeClass('liking').addClass('liked');	
+						}
+					} else {
+						if (jQuery(el).hasClass('likebutts')) {
+							jQuery(el).html('<i class="fa fa-heart-o"></i> Like').removeClass('liking').removeClass('liked');
+						}
+						else {
+							jQuery(el).html('<i class="fa fa-heart-o"></i>').removeClass('liking').removeClass('liked');
+						}
+					}
+				}
+				
+				else if (typeof(data.error) == 'undefined') {
+					jQuery(el).addClass('error').removeClass('liking');
+				}
+				
+			},
+			error : function( xhr, status, error ) {
+				jQuery(el).addClass('error').removeClass('liking');
+			}
+		});
+	}
+}
+
+function nsscFollow(scid,el) {
+	var task = false;
+	if ( jQuery(el).hasClass('following') ) { 
+		return false; 
+	} else {
+		jQuery(el).addClass('following');
+		if ( jQuery(el).hasClass('followed') ) { 
+			task = 'unfollow'; 
+		} else { 
+			task = 'follow'; 
+		}
+		
+		jQuery.ajax({
+			type	: 'POST',
+			url		: ssd+'/inc/ajax.php',
+			data	:	{ 
+							task		: task,
+							_wpnonce	: jsn,
+							scid		: scid
+						},
+			
+			success : function( data, status, xhr )	{ 
+				
+				data = jQuery.parseJSON(data);
+				
+				if (typeof(data.error) == 'undefined') {
+					if (task == 'follow') {
+						jQuery(el).html('<i class="fa fa-eye" title="Unfollow"></i>').removeClass('following').addClass('followed');	
+					} else {
+						jQuery(el).html('<i class="fa fa-eye-slash" title="Follow"></i>').removeClass('following').removeClass('followed');
+					}
+				}
+				
+				else if (typeof(data.error) == 'undefined') {
+					jQuery(el).addClass('error').removeClass('following');
+				}
+				
+			},
+			error : function( xhr, status, error ) {
+				jQuery(el).addClass('error').removeClass('following');
+			}
+		});
+	}
+}
+
+function limitChange(el) {
+	if ( jQuery(el).hasClass('changing') ) { 
+		return false; 
+	} else {
+		jQuery(el).addClass('changing').attr('disabled','disabled');
+		var lim = jQuery(el).val();
+		jQuery.ajax({
+			type	: 'POST',
+			url		: ssd+'/inc/ajax.php',
+			data	:	{ 
+							task		: 'limitchange',
+							limitno		: lim,
+							_wpnonce	: jsn
+						},
+			
+			success : function( data, status, xhr )	{ 
+				
+				data = jQuery.parseJSON(data);
+				
+				if (typeof(data.error) == 'undefined') {	jQuery(el).removeAttr('disabled').removeClass('changing').addClass('success').delay(3000).removeClass('success');	
+				var url = location.protocol + "//" + document.domain + "/" + location.pathname.split('/')[1] + "/";
+				window.location = url;
+				}
+				
+				else if (typeof(data.error) == 'undefined') {
+					jQuery(el).addClass('error').removeClass('changing').removeAttr('disabled');
+				}
+				
+			},
+			error : function( xhr, status, error ) {
+				jQuery(el).addClass('error').removeClass('changing').removeAttr('disabled');
+			}
+		});
+	}
+}
+
+function lengthChange(el) {
+	if ( jQuery(el).hasClass('changing') ) { 
+		return false; 
+	} else {
+		jQuery(el).addClass('changing').attr('disabled','disabled');
+		var leng = jQuery(el).val();
+		jQuery.ajax({
+			type	: 'POST',
+			url		: ssd+'/inc/ajax.php',
+			data	:	{ 
+							task		: 'lengthchange',
+							length		: leng,
+							_wpnonce	: jsn
+						},
+			
+			success : function( data, status, xhr )	{ 
+				
+				data = jQuery.parseJSON(data);
+				
+				if (typeof(data.error) == 'undefined') {	jQuery(el).removeAttr('disabled').removeClass('changing').addClass('success').delay(3000).removeClass('success');	
+				}
+				
+				else if (typeof(data.error) == 'undefined') {
+					jQuery(el).addClass('error').removeClass('changing').removeAttr('disabled');
+				}
+				
+			},
+			error : function( xhr, status, error ) {
+				jQuery(el).addClass('error').removeClass('changing').removeAttr('disabled');
+			}
+		});
+	}
+}
+
+function deauthDB() {
+	if ( jQuery('#dropboxpanel').hasClass('connecting') ) { 
+		return false; 
+	} else {
+		var cm = confirm('Are you SURE you want to disconnect Dropbox?');
+		if (cm) {
+			jQuery('#dropboxpanel').addClass('connecting');
+			jQuery.ajax({
+				type	: 'POST',
+				url		: ssd+'/inc/ajax.php',
+				data	:	{ 
+								task		: 'deauthdropbox',
+								_wpnonce	: jsn
+							},
+				
+				success : function( data, status, xhr )	{ 
+					
+					data = jQuery.parseJSON(data);
+					
+					if (typeof(data.success) != 'undefined') {
+						jQuery('#dropboxpanel').removeClass('connecting');
+						jQuery('#dropboxpanel').html('<p class="nssc-option"><a href="/?nssc-dbauth" class="awesome nssc"><i class="fa fa-dropbox"></i> Connect Dropbox</a></p>');
+					}
+				},
+				error : function( xhr, status, error ) {
+					jQuery('.connect-dropbox').addClass('error').removeClass('connecting');
+				}
+			});
+		} else {
+			return false;	
+		}
+	}	
+}
+
+function clearRepostCache() {
+if ( jQuery('.clear-reposts').hasClass('clearing') ) { 
+		return false; 
+	} else {
+		var cm = confirm('Are you SURE you want to clear your repost cache? There\'s no undo, so you\'ll have to re-import...');
+		if (cm) {
+			jQuery('.clear-reposts').addClass('clearing');
+			jQuery.ajax({
+				type	: 'POST',
+				url		: ssd+'/inc/ajax.php',
+				data	:	{ 
+								task		: 'clearrepostcache',
+								_wpnonce	: jsn
+							},
+				
+				success : function( data, status, xhr )	{ 
+					
+					data = jQuery.parseJSON(data);
+					
+					if (typeof(data.success) != 'undefined') {
+						jQuery('.clear-reposts').removeClass('clearing');
+						alert('Cache Cleared');
+					}
+				},
+				error : function( xhr, status, error ) {
+					jQuery('.clear-reposts').addClass('error').removeClass('clearing');
+				}
+			});
+		} else {
+			return false;	
+		}
+	}
+}
+
+function nsscDBUpload(scid,el) {
+	dbUpload(scid,el);
+}
+
+function dbUpload(scid,el) {
+if ( jQuery(el).hasClass('uploading') ) { 
+		return false; 
+	} else {
+		jQuery(el).addClass('uploading');
+		jQuery.ajax({
+			type	: 'POST',
+			url		: ssd+'/inc/ajax.php',
+			data	:	{ 
+							task		: 'dbupload',
+							scid		: scid,
+							_wpnonce	: jsn
+						},
+			
+			success : function( data, status, xhr )	{ 
+				
+				data = jQuery.parseJSON(data);
+				
+				if (typeof(data.success) != 'undefined') {
+					jQuery(el).removeClass('uploading');
+					alert('complete');
+				} else if (typeof(data.error) != 'undefined') {
+					jQuery(el).removeClass('uploading');
+					alert(data.error);
+				}
+			},
+			error : function( xhr, status, error ) {
+				jQuery(el).removeClass('uploading');
+				alert('failed');
+			}
+		});
+	}
+}
+
+// AJAX Manager
+		
+var ajaxManager = (function() {
+	 var requests = [];
+
+	 return {
+		addReq:  function(opt) {
+			requests.push(opt);
+		},
+		removeReq:  function(opt) {
+			if( jQuery.inArray(opt, requests) > -1 )
+				requests.splice(jQuery.inArray(opt, requests), 1);
+		},
+		run: function() {
+			var self = this,
+				oriSuc;
+
+			if( requests.length ) {
+				oriSuc = requests[0].complete;
+
+				requests[0].complete = function() {
+					 if( typeof(oriSuc) === 'function' ) oriSuc();
+					 requests.shift();
+					 self.run.apply(self, []);
+				};   
+
+				jQuery.ajax(requests[0]);
+			} else {
+			  self.tid = setTimeout(function() {
+				 self.run.apply(self, []);
+			  }, 1000);
+			}
+		},
+		stop:  function() {
+			requests = [];
+			clearTimeout(this.tid);
+		}
+	 };
+}());

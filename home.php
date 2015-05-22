@@ -1,0 +1,1 @@
+<?php wp_redirect('/stream/'); exit; ?>
